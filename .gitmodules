@@ -1,0 +1,6 @@
+[submodule "Assets/Tools/UnitaskFBT"]
+	path = Assets/Tools/UnitaskFBT
+	url = https://github.com/dmitrybaltin/UnitaskFBT.git
+[submodule "Assets/Tools/FunctionalBT"]
+	path = Assets/Tools/FunctionalBT
+	url = https://github.com/dmitrybaltin/FunctionalBT.git
