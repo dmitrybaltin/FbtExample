@@ -15,26 +15,26 @@ namespace Baltin.Examples.FBT
         [SerializeField] private NpcConfig config;
 
         /// <summary>
-        /// Blackboard object that contains methods and data of controlled object
+        /// Blackboard object contains NPC methods and data
         /// </summary>
-        private NpcBoard npcBoard;
+        private NpcBoard _npcBoard;
 
         void Start()
         {
-            Transform player = GameObject.FindGameObjectWithTag("Player").transform;
+            var player = GameObject.FindGameObjectWithTag("Player").transform;
             
-            npcBoard = new NpcBoard(
+            _npcBoard = new NpcBoard(
                 config,
                 GetComponent<Rigidbody>(), 
                 GetComponent<MeshRenderer>(),
                 player);
-            name = "Npc " + npcBoard.InstanceId;
+            name = "Npc " + _npcBoard.InstanceId;
         }
 
         void Update()
         {
             //Behaviour tree is executed here and all the required NPC methods are called from Behavior Tree
-            NpcFbt.Execute(npcBoard);
+            _npcBoard.ExecuteBt();
         }
     }
 
@@ -42,12 +42,12 @@ namespace Baltin.Examples.FBT
     public class NpcConfig
     {
         /// <summary>
-        /// Multiplayer to a gravity force between the NPC and the player when them are close to each other  
+        /// Force to move NPC to the target when they are close to each other  
         /// </summary>
         [SerializeField] public float baseClosePlayerForce = 5f;
         
         /// <summary>
-        /// Multiplayer to a gravity force between the NPC and the player when them are not close to each other  
+        /// Force to move NPC to the target when they are not close to each other  
         /// </summary>
         [SerializeField] public float baseDistantPlayerForce = 0.5f;
     }
@@ -55,13 +55,13 @@ namespace Baltin.Examples.FBT
     /// <summary>
     /// Behavior Tree definition
     /// </summary>
-    public class NpcFbt
+    public static class NpcFbt
     {
-        public static void Execute(NpcBoard b) =>
-            b.Sequencer(    //Classic Sequencer node
+        public static void ExecuteBt(this NpcBoard b) =>
+            b.Sequencer(    //Sequencer node
                 static b => b.PreUpdate(),  //The first child of Sequencer that is a classic Action node realized as a delegate Func<NpcBoard, Status> 
-                static b => b.Selector(     //The first child of Sequencer is a Classic Selector node
-                    static b => b.If(       //The first child of Sequencer a Classic Conditional node 
+                static b => b.Selector(     //The first child of Sequencer is a Selector node
+                    static b => b.If(       //The first child of Selector is a Conditional node 
                         static b => b.PlayerDistance < 1f,  //Condition
                         static b => b.Sequencer(            //This Sequencer node is executed when the condition above is true 
                             static b => b.SetColor(Color.red),
@@ -88,7 +88,7 @@ namespace Baltin.Examples.FBT
     {
         private static readonly int ColorPropertyID = Shader.PropertyToID("_Color");
         
-        public NpcConfig Config;
+        public readonly NpcConfig Config;
         
         public readonly int InstanceId; 
         
