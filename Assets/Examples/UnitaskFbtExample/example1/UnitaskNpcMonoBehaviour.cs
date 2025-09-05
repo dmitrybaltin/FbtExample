@@ -49,19 +49,20 @@ namespace Baltin.Examples.UnitaskFbt
 
             try
             {
-                await npcBoard.Sequencer(c,                              //Sequencer node
-                    static async (b, c) => await b.FindTarget(),  //Action node realized as a delegate Func<NpcBoard, UniTask<bool>> 
-                    static async (b, c) => await b.Selector(c,    //Selector node
-                        static async (b, c) => await b.If(c,      //Conditional node 
-                            static b => b.TargetDistance < 1f,    //Condition
-                            static async (b, c) => await b.MeleeAttack()),
-                        static async (b, c) => await b.If(c,
+                await npcBoard.Sequencer(c, //Sequencer node
+                    static (b, _) => b.FindTarget(), //Action node realized as a delegate Func<NpcBoard, UniTask<bool>> 
+                    static (b, c) => b.Selector(c,   //Selector node
+                        static (b, c) => b.If(c,     //Conditional node 
+                            static b => b.TargetDistance < 1f, //Condition
+                            static (b, _) => b.MeleeAttack()), //Action
+                        static (b, c) => b.If(c,
                             static b => b.TargetDistance < 3f,
-                            static async (b, c) => await b.RangeAttack()),  //RangeAttack() is the only continuous function in this BT allowing be in the running state
-                        static async (b, c) => await b.If(c,
+                            static (b, _) =>
+                                b.RangeAttack()), //The only continuous function here that can be "running"
+                        static (b, c) => b.If(c,
                             static b => b.TargetDistance < 8f,
-                            static async (b, c) => await b.Move()),
-                        static async (b, c) => await b.Idle()));
+                            static (b, _) => b.Move()),
+                        static (b, _) => b.Idle()));
             }
             catch (Exception e)
             {
