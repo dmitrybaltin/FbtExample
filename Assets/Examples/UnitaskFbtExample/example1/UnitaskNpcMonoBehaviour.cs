@@ -3,9 +3,10 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
-using Baltin.UnitaskFBT;
+using Baltin.UFBT;
+using Random = UnityEngine.Random;
 
-namespace Baltin.Examples.UnitaskFbt
+namespace Baltin.UFBT.Example1
 {
     /// <summary>
     /// NpcMonoBehaviour object that describe the NPC in scene and serve as a entry point for its behaviour 
@@ -49,20 +50,20 @@ namespace Baltin.Examples.UnitaskFbt
 
             try
             {
-                await npcBoard.Sequencer(c, //Sequencer node
-                    static (b, _) => b.FindTarget(), //Action node realized as a delegate Func<NpcBoard, UniTask<bool>> 
-                    static (b, c) => b.Selector(c,   //Selector node
-                        static (b, c) => b.If(c,     //Conditional node 
+                await npcBoard.Sequencer( //Sequencer node
+                    static b => b.FindTarget(), //Action node realized as a delegate Func<NpcBoard, UniTask<bool>> 
+                    static b => b.Selector(   //Selector node
+                        static b => b.If(     //Conditional node 
                             static b => b.TargetDistance < 1f, //Condition
-                            static (b, _) => b.MeleeAttack()), //Action
-                        static (b, c) => b.If(c,
+                            static b => b.MeleeAttack()), //Action
+                        static b => b.If(
                             static b => b.TargetDistance < 3f,
-                            static (b, _) =>
+                            static b =>
                                 b.RangeAttack()), //The only continuous function here that can be "running"
-                        static (b, c) => b.If(c,
+                        static b => b.If(
                             static b => b.TargetDistance < 8f,
-                            static (b, _) => b.Move()),
-                        static (b, _) => b.Idle()));
+                            static b => b.Move()),
+                        static b => b.Idle()));
             }
             catch (Exception e)
             {
