@@ -10,7 +10,7 @@
   ],
   "dependencies": {
     "com.baltin.fbt": "0.6.2",
-    "com.baltin.ufbt": "0.5.3",
+    "com.baltin.ufbt": "0.6.4",
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
     "com.unity.collab-proxy": "2.8.2",
     "com.unity.feature.development": "1.0.1",
