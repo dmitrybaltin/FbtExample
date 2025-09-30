@@ -1,0 +1,3 @@
+[submodule "Assets/Tools/AsyncRaycast"]
+	path = Assets/Tools/AsyncRaycast
+	url = https://github.com/dmitrybaltin/AsyncRaycast.git

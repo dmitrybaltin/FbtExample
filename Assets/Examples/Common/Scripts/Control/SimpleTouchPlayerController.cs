@@ -4,7 +4,7 @@ namespace Baltin.Examples.UnitaskFbt
 {
 
     [RequireComponent(typeof(Rigidbody)), RequireComponent(typeof(Collider))]
-    public class PlayerController : MonoBehaviour
+    public class SimpleTouchPlayerController : MonoBehaviour
     {
         private Camera mainCamera;
         private Rigidbody body;
