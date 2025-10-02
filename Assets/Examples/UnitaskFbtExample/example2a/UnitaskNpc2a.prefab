@@ -150,6 +150,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   physicsBatcher: {fileID: 0}
   config:
+    spawn:
+      npcNumber: 50
+      maxNpcNumber: 2000
+    vision:
+      raycastsPerNpc: 15
+      maxRaycastsPerNpc: 1000
+      maxRaycastsPerScene: 100000
+      viewAngle: 90
+      viewDistance: 10
+      targetMask:
+        serializedVersion: 2
+        m_Bits: 64
     attackForce: 10
     movingForce: 1
     rangePreparingDuration: 1
@@ -157,12 +169,6 @@ MonoBehaviour:
     patrolForce: 0.2
     patrolTorque: 1
     relaxDuration: 3
-    viewAngle: 90
-    rayCount: 5
-    viewDistance: 10
-    targetMask:
-      serializedVersion: 2
-      m_Bits: 64
 --- !u!1 &3892799256868047512
 GameObject:
   m_ObjectHideFlags: 0

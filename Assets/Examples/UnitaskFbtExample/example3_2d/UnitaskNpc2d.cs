@@ -3,14 +3,13 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
-using Tools.AsyncRaycast;
 using Random = UnityEngine.Random;
 
-namespace Baltin.UFBT.Example2a
+namespace Baltin.UFBT.Example3
 {
 
     [Serializable]
-    public class NpcConfig2a
+    public class NpcConfig
     {
         /// <summary>
         /// Coefficient to a gravity force between the NPC and the player when them are close to each other  
@@ -46,12 +45,10 @@ namespace Baltin.UFBT.Example2a
     /// <summary>
     /// NpcMonoBehaviour object that describe the NPC in scene and serve as a entry point for its behaviour 
     /// </summary>
-    [RequireComponent(typeof(Rigidbody)), RequireComponent(typeof(Collider)), RequireComponent(typeof(MeshRenderer))]
-    public class UnitaskNpcMonoBehaviour2a : MonoBehaviour
+    [RequireComponent(typeof(Rigidbody2D)), RequireComponent(typeof(Collider2D)), RequireComponent(typeof(MeshRenderer))]
+    public class UnitaskNpc2d : MonoBehaviour
     {
-        [SerializeField] private LateUpdateBatcher physicsBatcher;
-        
-        [SerializeField] private NpcConfig2a config;
+        [SerializeField] private NpcConfig config;
 
         private bool _treeIsExecuting = false;
 
@@ -59,16 +56,17 @@ namespace Baltin.UFBT.Example2a
         
         private int _instanceId; 
         
-        private Rigidbody _body;
+        private Rigidbody2D _body;
+        
         private MeshRenderer _meshRenderer;
         
         private Vector3 _initialLocalScale;
 
-        private INpcVision _vision;
+        private NpcVision2d _vision;
         
         private Transform _target; 
         
-        private Vector3 _targetDirection;
+        private Vector2 _targetDirection;
 
         private float _targetDistance;
 
@@ -77,7 +75,9 @@ namespace Baltin.UFBT.Example2a
         void Start()
         {
             _target = GameObject.FindGameObjectWithTag("Player").transform;
-            _body = GetComponent<Rigidbody>();
+            
+            _body = GetComponent<Rigidbody2D>();
+            
             _meshRenderer = GetComponent<MeshRenderer>();
            
             _initialLocalScale = _body.transform.localScale;
@@ -86,7 +86,7 @@ namespace Baltin.UFBT.Example2a
             
             name = "Npc " + _instanceId;
             
-            _vision = new NpcVision2a(physicsBatcher, config.viewAngle, config.rayCount, config.viewDistance, config.targetMask);
+            _vision = new NpcVision2d(config.viewAngle, config.rayCount, config.viewDistance, config.targetMask);
         }
 
         public void Update()
@@ -113,7 +113,7 @@ namespace Baltin.UFBT.Example2a
             {
                 await this.Selector( //Sequencer node
                     static b => b.Sequencer( //Sequencer node
-                        static b => b.FindTargetAsync(), //Action node realized as a simple delegate 
+                        static b => b.FindTarget(), //Action node realized as a simple delegate 
                         static b => b.Selector(     //Selector node
                             static b => b.If(       //Conditional node 
                                 static b => b._targetDistance < 1f,  //Condition
@@ -142,25 +142,25 @@ namespace Baltin.UFBT.Example2a
         /// </summary>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public async UniTask<bool> FindTargetAsync()
+        public UniTask<bool> FindTarget()
         {
             //todo: Надо сделать функцию продолжительной. Пока не нашил цель - ищем ее
 
-            _target = await _vision.FindTargetAsync(transform);
+            _target = _vision.FindTarget(transform);
 
             if (_target is null)
             {
                 _targetDistance = 1000;
-                return false;
+                return UniTask.FromResult(false);
             }
 
-            _targetDistance = Vector3.Distance(_target.position, _body.worldCenterOfMass);
+            _targetDistance = Vector2.Distance(_target.position, _body.worldCenterOfMass);
             if (_targetDistance != 0)
-                _targetDirection = (_target.position - _body.worldCenterOfMass) / _targetDistance;
+                _targetDirection = ((Vector2)_target.position - _body.worldCenterOfMass) / _targetDistance;
             else
                 _targetDirection = Vector3.zero;
 
-            return true;
+            return UniTask.FromResult(true);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -185,8 +185,8 @@ namespace Baltin.UFBT.Example2a
             var desiredDirection = rot * transform.up;
 
             // Плавный поворот через момент
-            float angleDiff = Vector3.SignedAngle(transform.up, desiredDirection, Vector3.forward);
-            AddTorque(Vector3.forward * angleDiff * config.patrolTorque);
+            var angleDiff = Vector3.SignedAngle(transform.up, desiredDirection, Vector3.forward);
+            AddTorque(angleDiff * config.patrolTorque);
 
             // Движение вперед
             AddForce(config.patrolForce);
@@ -239,7 +239,7 @@ namespace Baltin.UFBT.Example2a
                 Shake(0, 0);
             }
 
-            if(!await FindTargetAsync())
+            if(!await FindTarget())
                 return false;
 
             //Attack
@@ -324,20 +324,20 @@ namespace Baltin.UFBT.Example2a
         {
             //var force = _targetDirection * (forceToTarget * Time.deltaTime);
             var force = _body.transform.up * (forceToTarget * Time.deltaTime);
-            _body.AddForce(force, ForceMode.VelocityChange);
+            _body.AddForce(force, ForceMode2D.Impulse);
         }
 
-        private void AddTorque(Vector3 torqueToTarget)
+        private void AddTorque(float torqueToTarget)
         {
             var torque = torqueToTarget * Time.deltaTime;
-            _body.AddTorque(torque, ForceMode.VelocityChange);
+            _body.AddTorque(torque, ForceMode2D.Impulse);
         }
 
-        private static Vector3 RandomDirection()
+        private static Vector2 RandomDirection()
         {
-            var dir = UnityEngine.Random.onUnitSphere;
+            var dir = Random.onUnitSphere;
 
-            return new Vector3(dir.x, dir.y, 0);
+            return new Vector2(dir.x, dir.y);
         }
         
         private void RotateToTarget(float rotationSpeed)

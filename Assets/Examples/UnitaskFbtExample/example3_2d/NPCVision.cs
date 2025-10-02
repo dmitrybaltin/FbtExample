@@ -1,22 +1,17 @@
-﻿using Cysharp.Threading.Tasks;
-using Tools.AsyncRaycast.Abstraction;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace Baltin.UFBT.Example2a
+namespace Baltin.UFBT.Example3
 {
-    public class NpcVision2a : INpcVision
+    public class NpcVision2d
     {
         private readonly Vector3[] _directions;
         private readonly float _viewDistance;
         private readonly LayerMask _targetMask;
-        private IPhysicsBatcher _physicsBatcher;
 
-        public NpcVision2a(IPhysicsBatcher physicsBatcher, float viewAngle, int rayCount, float viewDistance, LayerMask targetMask)
+        public NpcVision2d(float viewAngle, int rayCount, float viewDistance, LayerMask targetMask)
         {
-            _physicsBatcher = physicsBatcher;
-            
-            _viewDistance = viewDistance;
-            _targetMask = targetMask;
+            this._viewDistance = viewDistance;
+            this._targetMask = targetMask;
 
             // Вычисляем направления один раз
             _directions = new Vector3[rayCount];
@@ -35,30 +30,6 @@ namespace Baltin.UFBT.Example2a
         /// <summary>
         /// Find a target
         /// </summary>
-        public async UniTask<Transform> FindTargetAsync(Transform origin)
-        {
-            if (_physicsBatcher is null) 
-                return null;
-            
-            var dir = _directions[_directions.Length/2];
-            
-            var direction = origin.rotation * dir;
-            var distance = _viewDistance;
-            var layerMask = _targetMask;
-
-            var command = new RaycastCommand(origin.position, direction, distance, layerMask);
-
-            var hit = await _physicsBatcher.RaycastAsync(command);
-
-            if (hit.collider == null) 
-                return null;
-            
-            return hit.collider.gameObject.transform;
-        }
-        
-        /// <summary>
-        /// Find a target
-        /// </summary>
         public Transform FindTarget(Transform origin)
         {
             foreach (var dir in _directions)
@@ -70,12 +41,6 @@ namespace Baltin.UFBT.Example2a
 
         public void DrawDebug(Transform origin)
         {
-            {
-                var dir = _directions[_directions.Length / 2];
-                var direction = origin.rotation * dir * _viewDistance;
-                Debug.DrawRay(origin.position, direction, Color.red);
-            }
-
             if (_directions == null) return;
 
             foreach (var dir in _directions)

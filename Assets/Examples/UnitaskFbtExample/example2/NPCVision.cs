@@ -10,8 +10,8 @@ namespace Baltin.UFBT.Example2
 
         public NpcVision(float viewAngle, int rayCount, float viewDistance, LayerMask targetMask)
         {
-            this._viewDistance = viewDistance;
-            this._targetMask = targetMask;
+            _viewDistance = viewDistance;
+            _targetMask = targetMask;
 
             // Вычисляем направления один раз
             _directions = new Vector3[rayCount];

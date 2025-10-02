@@ -1,7 +1,7 @@
 ﻿using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Baltin.UFBT.Example2a
+namespace Baltin.UFBT.Example2a.Abstraction
 {
     public interface INpcVision
     {
