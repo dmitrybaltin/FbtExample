@@ -8,6 +8,11 @@ namespace Examples.UnitaskFbtExample.example2a.Scripts.Services
         
         void OnDespawn();
         
-        GameObject gameObject { get; }
+        event System.Action<IPoolable> OnKillMe;
+
+        public void SetPosition(Vector3 position);
+
+        public void SetParent(Transform parent);
+
     }
 }

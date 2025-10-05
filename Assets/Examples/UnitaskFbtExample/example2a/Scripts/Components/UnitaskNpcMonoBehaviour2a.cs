@@ -333,5 +333,17 @@ namespace Baltin.UFBT.Example2a
         {
             gameObject.SetActive(false);
         }
+
+        public event Action<IPoolable> OnKillMe;
+
+        public void SetPosition(Vector3 position)
+        {
+            transform.position = position;
+        }
+        
+        public void SetParent(Transform parent)
+        {
+            transform.parent = parent;
+        }
     }
 }

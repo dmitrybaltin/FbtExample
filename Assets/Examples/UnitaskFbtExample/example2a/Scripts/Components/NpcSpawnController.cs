@@ -7,12 +7,13 @@ namespace Baltin.UFBT.Example2a
     public class SpawnController : MonoBehaviour
     {
         [SerializeField] private UnitaskNpcMonoBehaviour2a npcPrefab;
-        [SerializeField] private int targetNpcCount = 50;
-        [SerializeField] private List<NpcSpawnArea> spawnAreas;
-
-        [SerializeField] private float minInterval = 0.1f;
+        [SerializeField][Range(0,1000)] private int targetNpcCount = 100;
+        [SerializeField] private List<SpawnArea> spawnAreas;
+        private float _totalWeight = 0;
+        
         [SerializeField] private float maxInterval = 5f;
-        [SerializeField] private float proportionalGain = 0.5f;
+
+        [SerializeField] private float proportionalGain = 0.1f;
 
         private GenericPool<UnitaskNpcMonoBehaviour2a> _pool;
 
@@ -22,40 +23,62 @@ namespace Baltin.UFBT.Example2a
             _pool = new GenericPool<UnitaskNpcMonoBehaviour2a>(npcPrefab, targetNpcCount);
 
             // ищем все дочерние спаун-зоны
-            spawnAreas = new List<NpcSpawnArea>(GetComponentsInChildren<NpcSpawnArea>());
+            spawnAreas = new List<SpawnArea>(GetComponentsInChildren<SpawnArea>());
 
             // связываем пул со всеми зонами
             foreach (var area in spawnAreas)
             {
                 area.SetPool(_pool);
+                _totalWeight += area.Weight;
             }
         }
-
 
         private void Update()
         {
             AdjustSpawnIntervals();
         }
 
+        private float _lastKillTime;
+        
         private void AdjustSpawnIntervals()
         {
-            var currentNpcCount = _pool.ActiveCount;
-            var error = targetNpcCount - currentNpcCount;
+            //П-регулятор частоты спауна/деспауна ботов
+            var spawnRate = proportionalGain * (targetNpcCount - _pool.ActiveCount);
+            
+            if (spawnRate > 0)
+                Spawn(spawnRate);
+            else
+                Despawn(spawnRate);
+        }
 
-            // простой P-контроллер: управляющее воздействие
-            var baseInterval = Mathf.Clamp(maxInterval - proportionalGain * error, minInterval, maxInterval);
+        private void Spawn(float spawnRate)
+        {
+            if (_totalWeight <= 0f) return;            
 
-            // вычисляем суммарный вес
-            var totalWeight = 0f;
-            foreach (var area in spawnAreas)
-                totalWeight += area.Weight;
-
-            // устанавливаем интервалы для каждой зоны с учетом веса
-            foreach (var area in spawnAreas)
+            var relatedSpawnRate = spawnRate / _totalWeight;
+            
+            for (var i = 0; i < spawnAreas.Count; i++)
             {
-                var weightFraction = area.Weight / totalWeight;
-                var interval = baseInterval / weightFraction; // зоны с большим весом спавнят быстрее
-                area.SetInterval(interval);
+                var area = spawnAreas[i];
+                var rate = relatedSpawnRate * area.Weight;
+
+                if (rate > Mathf.Epsilon)
+                    area.SetInterval(1 / rate);
+            }
+        }
+        
+        private void Despawn(float spawnRate)
+        {
+            if (spawnRate > -Mathf.Epsilon)
+                return;
+                
+            var killInterval = -1 / spawnRate;
+
+            if (Time.time - _lastKillTime >=  killInterval)
+            {
+                var npcToKill = (Time.time - _lastKillTime) / killInterval;
+                _pool.MassDespawn((int)npcToKill);
+                _lastKillTime = Time.time;
             }
         }
     }

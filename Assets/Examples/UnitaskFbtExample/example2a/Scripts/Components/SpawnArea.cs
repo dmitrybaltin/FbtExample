@@ -4,24 +4,29 @@ using UnityEngine;
 namespace Baltin.UFBT.Example2a
 {
     [RequireComponent(typeof(BoxCollider))]
-    public class NpcSpawnArea : MonoBehaviour
+    public class SpawnArea : MonoBehaviour
     {
         [SerializeField] private float weight = 1f;
 
         private BoxCollider _spawnArea;
-        private GenericPool<UnitaskNpcMonoBehaviour2a> _pool;
+        private IGameObjectsPool _pool;
         private float _interval;
         private float _timer;
+        private Vector3 _center;
+        private Vector3 _size;
 
         public float Weight => weight;
 
-        public void SetPool(GenericPool<UnitaskNpcMonoBehaviour2a> pool) => _pool = pool;
+        public void SetPool(IGameObjectsPool pool) => _pool = pool;
+        
         public void SetInterval(float interval) => _interval = interval;
 
         private void Awake()
         {
             _spawnArea = GetComponent<BoxCollider>();
-            // отключаем коллайдер, чтобы он не участвовал в физике
+
+            _center = _spawnArea.bounds.center;
+            _size = _spawnArea.bounds.size;
             _spawnArea.enabled = false;
         }
 
@@ -46,18 +51,16 @@ namespace Baltin.UFBT.Example2a
             for (var i = 0; i < count; i++)
             {
                 var npc = _pool.Spawn();
-                npc.transform.position = GetRandomPointInZone();
-                npc.transform.parent = transform;
+                npc.SetPosition(GetRandomPointInZone());
+                npc.SetParent(transform);
             }
         }
 
         private Vector3 GetRandomPointInZone()
         {
-            var center = _spawnArea.bounds.center;
-            var size = _spawnArea.bounds.size;
-            var x = Random.Range(center.x - size.x / 2f, center.x + size.x / 2f);
-            var y = center.y;
-            var z = Random.Range(center.z - size.z / 2f, center.z + size.z / 2f);
+            var x = Random.Range(_center.x - _size.x / 2f, _center.x + _size.x / 2f);
+            var y = Random.Range(_center.y - _size.y / 2f, _center.y + _size.y / 2f);
+            var z = Random.Range(_center.z - _size.z / 2f, _center.z + _size.y / 2f);
             return new Vector3(x, y, z);
         }
     }

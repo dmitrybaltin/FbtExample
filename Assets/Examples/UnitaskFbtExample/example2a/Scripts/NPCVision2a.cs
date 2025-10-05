@@ -27,7 +27,7 @@ namespace Baltin.UFBT.Example2a
         {
             if (_physicsBatcher is null)
                 return FindTarget(origin);
-            
+              
             RecalculateDirections();
             
             var hit = await _physicsBatcher.RaycastAsync(RaycastEnumerator(origin));
