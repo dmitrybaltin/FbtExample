@@ -1,13 +1,23 @@
 ﻿using System.Collections.Generic;
+using Examples.UnitaskFbtExample.example2a.Scripts.Models;
 using UnityEngine;
 using Examples.UnitaskFbtExample.example2a.Scripts.Services;
+using Tools.AsyncRaycast;
+using Unity.VisualScripting;
+using UnityEngine.Serialization;
 
 namespace Baltin.UFBT.Example2a
 {
     public class SpawnController : MonoBehaviour
     {
+        public Example2AConfig config;
         [SerializeField] private UnitaskNpcMonoBehaviour2a npcPrefab;
-        [SerializeField][Range(0,1000)] private int targetNpcCount = 100;
+        [SerializeField] private LateUpdateBatcher physicsBatcher;
+        
+        public int TargetNpcCount { get; set; }
+        public int ActiveNpcCount => _pool.ActiveCount; 
+        public int PoolNpcCount => _pool.PoolCount;
+        
         [SerializeField] private List<SpawnArea> spawnAreas;
         private float _totalWeight = 0;
         
@@ -15,20 +25,26 @@ namespace Baltin.UFBT.Example2a
 
         [SerializeField] private float proportionalGain = 0.1f;
 
-        private GenericPool<UnitaskNpcMonoBehaviour2a> _pool;
-
-        private void Awake()
+        private GenericPool<UnitaskNpcMonoBehaviour2a, NpcData> _pool;
+        
+        private NpcData _npcData;
+        
+        private void Start()
         {
             // создаем пул на максимальное требуемое количество
-            _pool = new GenericPool<UnitaskNpcMonoBehaviour2a>(npcPrefab, targetNpcCount);
+            _pool = new GenericPool<UnitaskNpcMonoBehaviour2a, NpcData>(npcPrefab, TargetNpcCount);
 
             // ищем все дочерние спаун-зоны
             spawnAreas = new List<SpawnArea>(GetComponentsInChildren<SpawnArea>());
 
+            _npcData = new NpcData(config?.npc, physicsBatcher);
+
+            TargetNpcCount = config?.npc.spawn.npcNumber ?? 50;
+
             // связываем пул со всеми зонами
             foreach (var area in spawnAreas)
             {
-                area.SetPool(_pool);
+                area.SetPool(_pool, _npcData);
                 _totalWeight += area.Weight;
             }
         }
@@ -43,7 +59,7 @@ namespace Baltin.UFBT.Example2a
         private void AdjustSpawnIntervals()
         {
             //П-регулятор частоты спауна/деспауна ботов
-            var spawnRate = proportionalGain * (targetNpcCount - _pool.ActiveCount);
+            var spawnRate = proportionalGain * (TargetNpcCount - _pool.ActiveCount);
             
             if (spawnRate > 0)
                 Spawn(spawnRate);

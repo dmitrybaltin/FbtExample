@@ -6,6 +6,8 @@ namespace Baltin.UFBT.Example2a
     [Serializable]
     public class NpcVisionConfig
     {
+        public bool enableBatching = true;
+
         public int raycastsPerNpc = 15;
 
         public int maxRaycastsPerNpc = 1000;

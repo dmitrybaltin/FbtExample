@@ -2,6 +2,7 @@
 using Baltin.UFBT.Example2a.Abstraction;
 using Cysharp.Threading.Tasks;
 using Tools.AsyncRaycast.Abstraction;
+using Tools.DebugUI;
 using UnityEngine;
 
 namespace Baltin.UFBT.Example2a
@@ -9,8 +10,8 @@ namespace Baltin.UFBT.Example2a
     public class NpcVision2a : INpcVision
     {
         private Vector3[] _directions;
-        private IPhysicsBatcher _physicsBatcher;
-        private NpcVisionConfig _config;
+        private readonly IPhysicsBatcher _physicsBatcher;
+        private readonly NpcVisionConfig _config;
 
         public NpcVision2a(NpcVisionConfig config, IPhysicsBatcher physicsBatcher)
         {
@@ -25,17 +26,18 @@ namespace Baltin.UFBT.Example2a
         /// <returns></returns>
         public async UniTask<Transform> FindTargetAsync(Transform origin)
         {
-            if (_physicsBatcher is null)
+            if (_physicsBatcher is null || !_config.enableBatching)
+            {
+                Dbg.Display("", "EnableBatching", "OFF");
                 return FindTarget(origin);
-              
+            }
+
+            Dbg.Display("", "EnableBatching", "ON");
             RecalculateDirections();
-            
+
             var hit = await _physicsBatcher.RaycastAsync(RaycastEnumerator(origin));
 
-            if (hit.collider == null) 
-                return null;
-            
-            return hit.collider.gameObject.transform;
+            return hit.collider?.gameObject.transform;
         }
 
         /// <summary>

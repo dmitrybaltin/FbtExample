@@ -4,8 +4,10 @@ using System.Threading;
 using Baltin.UFBT.Example2a.Abstraction;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+using Examples.UnitaskFbtExample.example2a.Scripts.Models;
 using Examples.UnitaskFbtExample.example2a.Scripts.Services;
 using Tools.AsyncRaycast;
+using Tools.AsyncRaycast.Abstraction;
 using Random = UnityEngine.Random;
 
 namespace Baltin.UFBT.Example2a
@@ -14,14 +16,16 @@ namespace Baltin.UFBT.Example2a
     /// NpcMonoBehaviour object that describe the NPC in scene and serve as a entry point for its behaviour 
     /// </summary>
     [RequireComponent(typeof(Rigidbody)), RequireComponent(typeof(Collider)), RequireComponent(typeof(MeshRenderer))]
-    public class UnitaskNpcMonoBehaviour2a : MonoBehaviour, IPoolable
+    public class UnitaskNpcMonoBehaviour2a : MonoBehaviour, IPoolable<NpcData>
     {
-        [SerializeField] private LateUpdateBatcher physicsBatcher;
-        
+        [SerializeField] private IPhysicsBatcher physicsBatcher;
+
         [SerializeField] private NpcConfig config;
 
         private bool _treeIsExecuting = false;
 
+        private MaterialPropertyBlock _block;
+        
         private static readonly int ColorPropertyID = Shader.PropertyToID("_Color");
         
         private int _instanceId; 
@@ -46,6 +50,8 @@ namespace Baltin.UFBT.Example2a
             _target = GameObject.FindGameObjectWithTag("Player").transform;
             _body = GetComponent<Rigidbody>();
             _meshRenderer = GetComponent<MeshRenderer>();
+
+            _block = new();
            
             _initialLocalScale = _body.transform.localScale;
             
@@ -61,7 +67,7 @@ namespace Baltin.UFBT.Example2a
             if (!_treeIsExecuting)
                 UpdateFbtAsync(CancellationToken.None).Forget();
             
-            _vision.DrawDebug(transform);
+            //_vision.DrawDebug(transform);
         }
 
         /// <summary>
@@ -111,8 +117,6 @@ namespace Baltin.UFBT.Example2a
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async UniTask<bool> FindTargetAsync()
         {
-            //todo: Надо сделать функцию продолжительной. Пока не нашил цель - ищем ее
-
             _target = await _vision.FindTargetAsync(transform);
 
             if (_target is null)
@@ -274,17 +278,29 @@ namespace Baltin.UFBT.Example2a
             _body.position = _body.position + shakeForce;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
+        public void SetColor(Color c, float smoothTime = 0)
+        {
+            /*_meshRenderer.GetPropertyBlock(_block);
+            _block.SetColor("_Color", c);
+            _meshRenderer.SetPropertyBlock(_block);*/
+        }
+        
+        /*[MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetColor(Color color, float smoothTime = 0)
         {
+            // если нужно сглаживание — можно использовать PropertyBlock для чтения предыдущего цвета
             if (smoothTime >= Time.deltaTime)
-                color = Color.Lerp(
-                    _meshRenderer.material.GetColor(ColorPropertyID),
-                    color,
-                    Time.deltaTime / smoothTime);
+            {
+                _meshRenderer.GetPropertyBlock(_block);
+                var current = _block.GetColor(ColorPropertyID);
+                color = Color.Lerp(current, color, Time.deltaTime / smoothTime);
+            }
 
-            _meshRenderer.material.SetColor(ColorPropertyID, color);
-        }
+            _meshRenderer.GetPropertyBlock(_block);
+            _block.SetColor(ColorPropertyID, color);
+            _meshRenderer.SetPropertyBlock(_block);
+        }*/
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void AddForce(float forceToTarget)
@@ -324,8 +340,10 @@ namespace Baltin.UFBT.Example2a
             );
         }
 
-        public void OnSpawn()
+        public void OnSpawn(NpcData data)
         {
+            config = data.Config;
+            physicsBatcher = data.Batcher;
             gameObject.SetActive(true);
         }
 
@@ -334,7 +352,7 @@ namespace Baltin.UFBT.Example2a
             gameObject.SetActive(false);
         }
 
-        public event Action<IPoolable> OnKillMe;
+        public event Action<IPoolable<NpcData>> OnKillMe;
 
         public void SetPosition(Vector3 position)
         {

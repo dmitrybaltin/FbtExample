@@ -3,72 +3,53 @@ using UnityEngine;
 
 namespace Examples.UnitaskFbtExample.example2a.Scripts.Services
 {
-    public class GenericPool<T> : IGameObjectsPool where T : Object, IPoolable
+    public class GenericPool<TObject, TData> : 
+        IGameObjectsPool<TData> where TObject : Object, 
+        IPoolable<TData> where TData : class
     {
-        private readonly T prefab;
-        private readonly Queue<T> pool = new ();
-        private readonly HashSet<T> activeObjects = new ();
-        private readonly Transform parent;
-
-        public GenericPool(T prefab, int initialSize, Transform parent = null)
+        private readonly TObject _prefab;
+        private readonly Queue<TObject> _pool = new ();
+        private readonly HashSet<TObject> _activeObjects = new ();
+        private readonly Transform _parent;
+        
+        public GenericPool(TObject prefab, int initialSize, Transform parent = null)
         {
-            this.prefab = prefab;
-            this.parent = parent;
+            this._prefab = prefab;
+            this._parent = parent;
 
             for (var i = 0; i < initialSize; i++)
             {
-                T obj = CreateNew();
-                pool.Enqueue(obj);
+                TObject obj = CreateNew();
+                _pool.Enqueue(obj);
             }
         }
 
-        private T CreateNew()
+        private TObject CreateNew()
         {
-            T obj = Object.Instantiate(prefab, parent);
+            var obj = Object.Instantiate(_prefab, _parent);
             obj.OnDespawn();
             return obj;
         }
 
-        public IPoolable Spawn()
+        public IPoolable<TData> Spawn(TData data)
         {
-            T obj = pool.Count > 0 ? pool.Dequeue() : CreateNew();
-            obj.OnSpawn();
-            obj.OnKillMe += obj1 => Despawn((T)obj1);
-            activeObjects.Add(obj);
+            var obj = _pool.Count > 0 ? _pool.Dequeue() : CreateNew();
+            obj.OnSpawn(data);
+            obj.OnKillMe += obj1 => Despawn((TObject)obj1);
+            _activeObjects.Add(obj);
             return obj;
         }
 
-        public void Despawn(T obj)
+        public void Despawn(TObject obj)
         {
-            if (activeObjects.Remove(obj))
+            if (_activeObjects.Remove(obj))
             {
                 obj.OnDespawn();
-                pool.Enqueue(obj);
+                _pool.Enqueue(obj);
             }   
             else
             {
                 Debug.LogWarning($"Attempting to despawn an object that is not active: {obj.name}");
-            }
-        }
-
-        //Despawn given quantity of objects
-        public void MassDespawnOld(int count)
-        {
-            if (count <= 0) return;
-
-            var enumerator = activeObjects.GetEnumerator();
-            var despawned = 0;
-
-            while (despawned < count && enumerator.MoveNext())
-            {
-                T obj = enumerator.Current;
-                // напрямую удаляем из HashSet и возвращаем в пул без повторного поиска
-                if (activeObjects.Remove(obj))
-                {
-                    obj.OnDespawn();
-                    pool.Enqueue(obj);
-                    despawned++;
-                }
             }
         }
         
@@ -76,24 +57,23 @@ namespace Examples.UnitaskFbtExample.example2a.Scripts.Services
         {
             if (count <= 0) return;
 
-            var enumerator = activeObjects.GetEnumerator();
+            var enumerator = _activeObjects.GetEnumerator();
             int despawned = 0;
 
             while (despawned < count && enumerator.MoveNext())
             {
-                T obj = enumerator.Current;
+                TObject obj = enumerator.Current;
                 // удаляем через CopyTo временный массив размера 1
-                activeObjects.Remove(obj);
+                _activeObjects.Remove(obj);
                 obj.OnDespawn();
-                pool.Enqueue(obj);
+                _pool.Enqueue(obj);
                 despawned++;
-                enumerator = activeObjects.GetEnumerator(); // пересоздаём enumerator после удаления
+                enumerator = _activeObjects.GetEnumerator(); // пересоздаём enumerator после удаления
             }
         }
 
-
-        public int ActiveCount => activeObjects.Count;
+        public int ActiveCount => _activeObjects.Count;
         
-        public int PoolCount => pool.Count;
+        public int PoolCount => _pool.Count;
     }
 }

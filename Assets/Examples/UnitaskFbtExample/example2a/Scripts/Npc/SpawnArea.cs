@@ -1,5 +1,8 @@
-﻿using Examples.UnitaskFbtExample.example2a.Scripts.Services;
+﻿using System;
+using Examples.UnitaskFbtExample.example2a.Scripts.Models;
+using Examples.UnitaskFbtExample.example2a.Scripts.Services;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Baltin.UFBT.Example2a
 {
@@ -8,8 +11,10 @@ namespace Baltin.UFBT.Example2a
     {
         [SerializeField] private float weight = 1f;
 
+        private IGameObjectsPool<NpcData> _pool;
+        private NpcData _npcData;
+
         private BoxCollider _spawnArea;
-        private IGameObjectsPool _pool;
         private float _interval;
         private float _timer;
         private Vector3 _center;
@@ -17,11 +22,15 @@ namespace Baltin.UFBT.Example2a
 
         public float Weight => weight;
 
-        public void SetPool(IGameObjectsPool pool) => _pool = pool;
-        
+        public void SetPool(IGameObjectsPool<NpcData> pool, NpcData npcData)
+        {
+            _pool = pool;
+            _npcData = npcData;
+        }
+
         public void SetInterval(float interval) => _interval = interval;
 
-        private void Awake()
+        private void Start()
         {
             _spawnArea = GetComponent<BoxCollider>();
 
@@ -45,12 +54,12 @@ namespace Baltin.UFBT.Example2a
 
         private void Spawn(int count)
         {
-            if (_pool is null)
+            if (_pool is null || _npcData is null)
                 return;
 
             for (var i = 0; i < count; i++)
             {
-                var npc = _pool.Spawn();
+                var npc = _pool.Spawn(_npcData);
                 npc.SetPosition(GetRandomPointInZone());
                 npc.SetParent(transform);
             }

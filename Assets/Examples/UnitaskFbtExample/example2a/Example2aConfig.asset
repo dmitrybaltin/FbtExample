@@ -12,10 +12,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75f8827aec6b42099b03d8ce8233f2fa, type: 3}
   m_Name: Example2aConfig
   m_EditorClassIdentifier: 
-  npcVisionConfig:
-    raycastsPerNpc: 15
-    maxRaycastsPerNpc: 1000
-  npcSpawnConfig:
-    npcNumber: 50
-    maxNpcNumber: 2000
-    maxRaycastsPerScene: 100000
+  npc:
+    spawn:
+      npcNumber: 80
+      maxNpcNumber: 2000
+    vision:
+      enableBatching: 1
+      raycastsPerNpc: 15
+      maxRaycastsPerNpc: 1000
+      maxRaycastsPerScene: 100000
+      viewAngle: 90
+      viewDistance: 10
+      targetMask:
+        serializedVersion: 2
+        m_Bits: 64
+    attackForce: 10
+    movingForce: 1
+    rangePreparingDuration: 1
+    rangeAttackDuration: 2
+    patrolForce: 0.2
+    patrolTorque: 1
+    relaxDuration: 3
